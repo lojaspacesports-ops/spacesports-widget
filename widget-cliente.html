@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escolha seu número — Space Sports</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1a1a;padding:16px;font-size:14px;}
+  .step-bar{display:flex;margin-bottom:20px;}
+  .step-dot{flex:1;text-align:center;font-size:11px;padding:6px 2px;color:#999;border-bottom:2px solid #eee;font-weight:500;}
+  .step-dot.active{color:#c0392b;border-color:#c0392b;}
+  .step-dot.done{color:#27ae60;border-color:#27ae60;}
+  .wz-step{display:none;}.wz-step.active{display:block;}
+  .card{background:#fff;border:1px solid #eee;border-radius:10px;padding:16px;margin-bottom:12px;}
+  .lbl{font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;display:block;}
+  .inp{width:100%;height:38px;padding:0 10px;border:1px solid #ddd;border-radius:7px;font-size:13px;background:#fff;color:#1a1a1a;outline:none;}
+  .inp:focus{border-color:#c0392b;}
+  .sel{width:100%;height:38px;padding:0 10px;border:1px solid #ddd;border-radius:7px;font-size:13px;background:#fff;color:#1a1a1a;outline:none;}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+  .sec-title{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px;}
+  .primary-btn{background:#c0392b;color:#fff;border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:8px;}
+  .primary-btn:hover{background:#a93226;}
+  .primary-btn:disabled{background:#ccc;cursor:not-allowed;}
+  .outline-btn{background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:500;cursor:pointer;width:100%;margin-top:8px;}
+  .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .num-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:5px;margin:10px 0;max-height:240px;overflow-y:auto;}
+  .num-cell{height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #ddd;font-size:15px;font-weight:600;cursor:pointer;background:#fff;transition:all .12s;}
+  .num-cell:hover:not(.sold){border-color:#c0392b;color:#c0392b;}
+  .num-cell.sel-num{background:#c0392b;border-color:#c0392b;color:#fff;}
+  .num-cell.sold{background:#fdecea;border-color:#f5c6c6;color:#c0392b;cursor:not-allowed;text-decoration:line-through;opacity:.7;}
+  .size-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+  .size-btn{height:40px;min-width:54px;padding:0 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;}
+  .size-btn:hover{border-color:#c0392b;}
+  .size-btn.active{background:#c0392b;border-color:#c0392b;color:#fff;}
+  .legend{display:flex;gap:14px;margin:6px 0 10px;}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#888;}
+  .legend-dot{width:12px;height:12px;border-radius:3px;}
+  .sel-summary{background:#f9f9f9;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:8px;border:1px solid #eee;}
+  .divider{border:none;border-top:1px solid #eee;margin:12px 0;}
+  .confirm-box{background:#eafaf1;border:1px solid #a9dfbf;border-radius:8px;padding:14px;margin-top:12px;display:none;}
+  .confirm-box p{color:#1e8449;font-size:14px;font-weight:600;}
+  .order-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
+  .order-row:last-child{border:none;}
+  .order-label{color:#888;}
+  .order-val{font-weight:600;text-align:right;max-width:60%;}
+  .loading{text-align:center;padding:2rem;color:#888;font-size:13px;}
+  .error-box{background:#fdecea;border:1px solid #f5c6c6;border-radius:8px;padding:10px 14px;color:#c0392b;font-size:13px;margin-bottom:10px;display:none;}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="step-bar">
+  <div class="step-dot active" id="sdot-1">1. Escolhas</div>
+  <div class="step-dot" id="sdot-2">2. Seus dados</div>
+  <div class="step-dot" id="sdot-3">3. Endereço</div>
+  <div class="step-dot" id="sdot-4">4. Confirmar</div>
+</div>
+
+<div id="error-box" class="error-box"></div>
+
+<!-- STEP 1 -->
+<div class="wz-step active" id="wz-1">
+  <div class="card">
+    <span class="lbl">Produto</span>
+    <select class="sel" id="cl-product" onchange="loadProduct()" style="margin-bottom:14px;">
+      <option value="">Carregando...</option>
+    </select>
+    <div id="cl-body" style="display:none;">
+      <span class="lbl">Tamanho</span>
+      <div class="size-row" id="cl-sizes"></div>
+      <div class="divider"></div>
+      <span class="lbl">Número das costas</span>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#fff;border:1px solid #ddd;"></div>Disponível</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c0392b;"></div>Selecionado</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fdecea;"></div>Esgotado</div>
+      </div>
+      <div class="num-grid" id="cl-nums"></div>
+      <div class="sel-summary" id="sel-summary">Selecione tamanho e número</div>
+    </div>
+  </div>
+  <button class="primary-btn" id="btn-next1" onclick="goStep(2)" disabled>Próximo →</button>
+</div>
+
+<!-- STEP 2 -->
+<div class="wz-step" id="wz-2">
+  <div class="card">
+    <p class="sec-title">Dados pessoais</p>
+    <div class="row-2">
+      <div><span class="lbl">Nome completo *</span><input class="inp" id="f-nome" placeholder="João da Silva"></div>
+      <div><span class="lbl">Data de nascimento</span><input class="inp" type="date" id="f-nasc"></div>
+    </div>
+    <div class="row-2">
+      <div><span class="lbl">CPF *</span><input class="inp" id="f-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)"></div>
+      <div><span class="lbl">RG</span><input class="inp" id="f-rg" placeholder="00.000.000-0"></div>
+    </div>
+    <div class="row-2">
+      <div><span class="lbl">Telefone/WhatsApp *</span><input class="inp" id="f-tel" placeholder="(11) 99999-9999" oninput="maskPhone(this)"></div>
+      <div><span class="lbl">E-mail *</span><input class="inp" id="f-email" placeholder="joao@email.com"></div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="outline-btn" onclick="goStep(1)">← Voltar</button>
+    <button class="primary-btn" style="margin:0;" onclick="goStep(3)">Próximo →</button>
+  </div>
+</div>
+
+<!-- STEP 3 -->
+<div class="wz-step" id="wz-3">
+  <div class="card">
+    <p class="sec-title">Endereço de entrega</p>
+    <div class="row-2">
+      <div><span class="lbl">CEP *</span><input class="inp" id="f-cep" placeholder="00000-000" oninput="maskCEP(this)" onblur="fetchCEP()"></div>
+      <div><span class="lbl">UF</span><input class="inp" id="f-uf" placeholder="SP" maxlength="2"></div>
+    </div>
+    <div class="row-2">
+      <div><span class="lbl">Cidade *</span><input class="inp" id="f-cidade" placeholder="São Paulo"></div>
+      <div><span class="lbl">Bairro</span><input class="inp" id="f-bairro" placeholder="Centro"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 80px;gap:10px;margin-bottom:10px;">
+      <div><span class="lbl">Rua/Avenida *</span><input class="inp" id="f-rua" placeholder="Rua das Flores"></div>
+      <div><span class="lbl">Número</span><input class="inp" id="f-numend" placeholder="123"></div>
+    </div>
+    <div><span class="lbl">Complemento</span><input class="inp" id="f-comp" placeholder="Apto 42, Bloco B"></div>
+  </div>
+  <div class="btn-row">
+    <button class="outline-btn" onclick="goStep(2)">← Voltar</button>
+    <button class="primary-btn" style="margin:0;" onclick="goStep(4)">Próximo →</button>
+  </div>
+</div>
+
+<!-- STEP 4 -->
+<div class="wz-step" id="wz-4">
+  <div class="card">
+    <p class="sec-title">Confirme seu pedido</p>
+    <div id="order-summary"></div>
+  </div>
+  <div class="btn-row">
+    <button class="outline-btn" onclick="goStep(3)">← Voltar</button>
+    <button class="primary-btn" style="margin:0;" id="btn-finalizar" onclick="finalizeOrder()">Finalizar pedido</button>
+  </div>
+  <div class="confirm-box" id="confirm-box">
+    <p>✅ Pedido registrado! Número <span id="confirm-detail"></span> reservado com sucesso.</p>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAieRIFFHPnD-I_AcWQNpWSFu5xzW_8-r0",
+    authDomain: "parceria-site.firebaseapp.com",
+    projectId: "parceria-site",
+    storageBucket: "parceria-site.firebasestorage.app",
+    messagingSenderId: "514961108742",
+    appId: "1:514961108742:web:0ee82bc5fedbb81cb77887"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let products = [];
+  let clProd = null, clNum = null, clSize = null;
+
+  function showError(msg) {
+    const box = document.getElementById('error-box');
+    box.textContent = msg;
+    box.style.display = msg ? 'block' : 'none';
+  }
+
+  async function loadProducts() {
+    try {
+      const snap = await getDocs(collection(db, 'produtos'));
+      products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const sel = document.getElementById('cl-product');
+      sel.innerHTML = '<option value="">Selecione o produto...</option>' +
+        products.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+    } catch(e) {
+      showError('Erro ao carregar produtos. Verifique sua conexão.');
+    }
+  }
+
+  window.loadProduct = function() {
+    const id = document.getElementById('cl-product').value;
+    clProd = products.find(p => p.id === id) || null;
+    clNum = null; clSize = null;
+    document.getElementById('cl-body').style.display = clProd ? 'block' : 'none';
+    if (!clProd) return;
+    document.getElementById('cl-sizes').innerHTML = clProd.tamanhos.map(s =>
+      `<button class="size-btn" onclick="clSelSize(this,'${s}')">${s}</button>`
+    ).join('');
+    renderNumGrid();
+    updateLabel();
+  };
+
+  function renderNumGrid() {
+    const grid = document.getElementById('cl-nums');
+    grid.innerHTML = '';
+    const sold = clProd.vendidos || [];
+    for (let n = clProd.numMin; n <= clProd.numMax; n++) {
+      const isSold = sold.includes(n);
+      const cell = document.createElement('div');
+      cell.className = 'num-cell' + (isSold ? ' sold' : '');
+      cell.textContent = n;
+      if (!isSold) cell.onclick = () => clSelNum(cell, n);
+      grid.appendChild(cell);
+    }
+  }
+
+  window.clSelSize = function(btn, size) {
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    clSize = size;
+    updateLabel();
+  };
+
+  window.clSelNum = function(cell, num) {
+    document.querySelectorAll('.num-cell:not(.sold)').forEach(c => c.classList.remove('sel-num'));
+    cell.classList.add('sel-num');
+    clNum = num;
+    updateLabel();
+  };
+
+  function updateLabel() {
+    const s = document.getElementById('sel-summary');
+    const btn = document.getElementById('btn-next1');
+    if (clNum && clSize) {
+      s.innerHTML = `<strong>Número ${clNum}</strong> · Tamanho <strong>${clSize}</strong>`;
+      s.style.color = '#1a1a1a';
+      btn.disabled = false;
+    } else {
+      s.textContent = clNum ? `Número ${clNum} selecionado — escolha o tamanho` :
+                      clSize ? `Tamanho ${clSize} — escolha o número` : 'Selecione tamanho e número';
+      s.style.color = '#888';
+      btn.disabled = true;
+    }
+  }
+
+  window.goStep = function(n) {
+    showError('');
+    if (n === 3) {
+      const nome = document.getElementById('f-nome').value.trim();
+      const cpf = document.getElementById('f-cpf').value.trim();
+      const tel = document.getElementById('f-tel').value.trim();
+      const email = document.getElementById('f-email').value.trim();
+      if (!nome || !cpf || !tel || !email) { showError('Preencha todos os campos obrigatórios (*).'); return; }
+    }
+    if (n === 4) {
+      const cep = document.getElementById('f-cep').value.trim();
+      const cidade = document.getElementById('f-cidade').value.trim();
+      const rua = document.getElementById('f-rua').value.trim();
+      if (!cep || !cidade || !rua) { showError('Preencha todos os campos obrigatórios (*).'); return; }
+      renderSummary();
+    }
+    document.querySelectorAll('.wz-step').forEach(s => s.classList.remove('active'));
+    document.getElementById('wz-' + n).classList.add('active');
+    document.querySelectorAll('.step-dot').forEach((d, i) => {
+      d.classList.remove('active', 'done');
+      if (i + 1 < n) d.classList.add('done');
+      if (i + 1 === n) d.classList.add('active');
+    });
+    document.getElementById('confirm-box').style.display = 'none';
+    window.scrollTo(0, 0);
+  };
+
+  function renderSummary() {
+    const rows = [
+      ['Produto', clProd.nome],
+      ['Número das costas', `#${clNum}`],
+      ['Tamanho', clSize],
+      ['Nome', document.getElementById('f-nome').value],
+      ['CPF', document.getElementById('f-cpf').value],
+      ['Telefone', document.getElementById('f-tel').value],
+      ['E-mail', document.getElementById('f-email').value],
+      ['Endereço', `${document.getElementById('f-rua').value}, ${document.getElementById('f-numend').value} ${document.getElementById('f-comp').value} — ${document.getElementById('f-bairro').value}, ${document.getElementById('f-cidade').value}/${document.getElementById('f-uf').value}`],
+      ['CEP', document.getElementById('f-cep').value]
+    ];
+    document.getElementById('order-summary').innerHTML = rows.map(([l, v]) =>
+      `<div class="order-row"><span class="order-label">${l}</span><span class="order-val">${v || '—'}</span></div>`
+    ).join('');
+  }
+
+  window.finalizeOrder = async function() {
+    const btn = document.getElementById('btn-finalizar');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Registrando...';
+    showError('');
+    try {
+      const prodRef = doc(db, 'produtos', clProd.id);
+      const prodSnap = await getDoc(prodRef);
+      const vendidos = prodSnap.data().vendidos || [];
+      if (vendidos.includes(clNum)) {
+        showError(`O número ${clNum} acabou de ser reservado por outra pessoa. Escolha outro número.`);
+        btn.disabled = false; btn.textContent = 'Finalizar pedido';
+        goStep(1); return;
+      }
+      const order = {
+        produto: clProd.nome,
+        produtoId: clProd.id,
+        numero: clNum,
+        tamanho: clSize,
+        nome: document.getElementById('f-nome').value,
+        cpf: document.getElementById('f-cpf').value,
+        rg: document.getElementById('f-rg').value,
+        nascimento: document.getElementById('f-nasc').value,
+        telefone: document.getElementById('f-tel').value,
+        email: document.getElementById('f-email').value,
+        cep: document.getElementById('f-cep').value,
+        rua: document.getElementById('f-rua').value,
+        numero_end: document.getElementById('f-numend').value,
+        complemento: document.getElementById('f-comp').value,
+        bairro: document.getElementById('f-bairro').value,
+        cidade: document.getElementById('f-cidade').value,
+        uf: document.getElementById('f-uf').value,
+        status: 'Pendente',
+        criadoEm: serverTimestamp()
+      };
+      await addDoc(collection(db, 'pedidos'), order);
+      await updateDoc(prodRef, { vendidos: arrayUnion(clNum) });
+      document.getElementById('confirm-detail').textContent = `#${clNum} · ${clSize}`;
+      document.getElementById('confirm-box').style.display = 'block';
+      btn.textContent = 'Pedido registrado ✓';
+    } catch(e) {
+      showError('Erro ao registrar pedido. Tente novamente.');
+      btn.disabled = false; btn.textContent = 'Finalizar pedido';
+    }
+  };
+
+  window.fetchCEP = async function() {
+    const cep = document.getElementById('f-cep').value.replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const d = await r.json();
+      if (!d.erro) {
+        document.getElementById('f-rua').value = d.logradouro || '';
+        document.getElementById('f-bairro').value = d.bairro || '';
+        document.getElementById('f-cidade').value = d.localidade || '';
+        document.getElementById('f-uf').value = d.uf || '';
+      }
+    } catch(e) {}
+  };
+
+  window.maskCPF = function(el) {
+    let v = el.value.replace(/\D/g,'').substring(0,11);
+    v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+    el.value = v;
+  };
+  window.maskPhone = function(el) {
+    let v = el.value.replace(/\D/g,'').substring(0,11);
+    v = v.replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{5})(\d)/,'$1-$2');
+    el.value = v;
+  };
+  window.maskCEP = function(el) {
+    let v = el.value.replace(/\D/g,'').substring(0,8);
+    v = v.replace(/(\d{5})(\d)/,'$1-$2');
+    el.value = v;
+  };
+
+  loadProducts();
+</script>
+</body>
+</html>
