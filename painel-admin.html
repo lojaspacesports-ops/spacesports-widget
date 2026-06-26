@@ -695,9 +695,98 @@
     document.getElementById('user-list').innerHTML=allUsers.length?allUsers.map(u=>`
       <div class="user-item">
         <div><div style="font-size:13px;font-weight:600;">${u.nome||u.email}</div><div style="font-size:11px;color:#888;margin-top:2px;">${u.email}</div>${u.role!=='admin'&&u.unidades?.length?`<div style="font-size:11px;color:#888;margin-top:2px;">📍 ${u.unidades.join(', ')}</div>`:''}</div>
-        <div style="display:flex;align-items:center;gap:8px;"><span class="role-badge ${u.role==='admin'?'role-admin':'role-unit'}">${u.role==='admin'?'Admin':'Unidade'}</span>${u.email!==ADMIN_EMAIL?`<button class="del-btn" onclick="deleteUser('${u.id}')">&#128465;</button>`:''}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="role-badge ${u.role==='admin'?'role-admin':'role-unit'}">${u.role==='admin'?'Admin':'Unidade'}</span>
+          <button onclick="editUser('${u.id}')" style="background:#eaf4fb;border:1px solid #aed6f1;color:#1a5276;border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;">✏️ Editar</button>
+          ${u.email!==ADMIN_EMAIL?`<button class="del-btn" onclick="deleteUser('${u.id}')">&#128465;</button>`:''}
+        </div>
       </div>`).join(''):'<div class="empty">Nenhum usuário cadastrado.</div>';
   }
+
+  window.editUser = function(id) {
+    const u = allUsers.find(x=>x.id===id); if(!u) return;
+    const allUnits=[...new Set([...allProducts.flatMap(p=>p.unidades||[]),...allOrders.map(o=>o.unidade).filter(Boolean)])].sort();
+    const unitsHtml = allUnits.length ? allUnits.map(un=>`<label><input type="checkbox" value="${un}" ${(u.unidades||[]).includes(un)?'checked':''}> ${un}</label>`).join('') : '<div style="color:#aaa;font-size:12px;">Nenhuma unidade.</div>';
+    // Mostrar painel de edição no lugar do formulário de criação
+    const rightPanel = document.querySelector('#tab-usuarios .two-col > div:last-child');
+    rightPanel.innerHTML = `
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <span class="lbl" style="font-size:13px;font-weight:700;color:#333;margin:0;">✏️ Editar usuário</span>
+          <button onclick="cancelEditUser()" style="background:none;border:none;color:#888;cursor:pointer;font-size:13px;">✕ Cancelar</button>
+        </div>
+        <div style="margin-bottom:10px;"><span class="lbl">Nome</span><input class="inp" id="eu-nome" value="${u.nome||''}"></div>
+        <div style="margin-bottom:10px;"><span class="lbl">E-mail</span><input class="inp" type="email" id="eu-email" value="${u.email||''}"></div>
+        <div style="margin-bottom:10px;"><span class="lbl">Nova senha <span style="font-weight:400;color:#aaa;">(deixe em branco para não alterar)</span></span><input class="inp" type="password" id="eu-senha" placeholder="Mínimo 6 caracteres"></div>
+        <div style="margin-bottom:14px;"><span class="lbl">Tipo de acesso</span>
+          <select class="sel" id="eu-role" onchange="toggleEditUnitSection()"><option value="unit" ${u.role!=='admin'?'selected':''}>Dono de Unidade</option><option value="admin" ${u.role==='admin'?'selected':''}>Administrador (vê tudo)</option></select>
+        </div>
+        <div id="eu-units-section" style="margin-bottom:14px;${u.role==='admin'?'display:none;':''}">
+          <span class="lbl">Unidades com acesso</span>
+          <div class="unit-check-list" id="eu-units-list">${unitsHtml}</div>
+        </div>
+        <button class="primary-btn" onclick="saveEditUser('${id}')" style="width:100%;" id="btn-edit-user">💾 Salvar alterações</button>
+        <div id="edit-user-msg" style="font-size:12px;margin-top:8px;text-align:center;min-height:16px;"></div>
+      </div>`;
+  };
+
+  window.toggleEditUnitSection = function() {
+    document.getElementById('eu-units-section').style.display = document.getElementById('eu-role').value==='admin'?'none':'block';
+  };
+
+  window.cancelEditUser = function() {
+    const rightPanel = document.querySelector('#tab-usuarios .two-col > div:last-child');
+    rightPanel.innerHTML = `
+      <div class="card">
+        <span class="lbl" style="font-size:13px;font-weight:700;color:#333;margin-bottom:14px;display:block;">➕ Novo usuário</span>
+        <div style="margin-bottom:10px;"><span class="lbl">Nome</span><input class="inp" id="nu-nome" placeholder="Nome completo"></div>
+        <div style="margin-bottom:10px;"><span class="lbl">E-mail</span><input class="inp" type="email" id="nu-email" placeholder="email@exemplo.com"></div>
+        <div style="margin-bottom:10px;"><span class="lbl">Senha inicial</span><input class="inp" type="password" id="nu-senha" placeholder="Mínimo 6 caracteres"></div>
+        <div style="margin-bottom:14px;"><span class="lbl">Tipo de acesso</span>
+          <select class="sel" id="nu-role" onchange="toggleUnitSection()"><option value="unit">Dono de Unidade</option><option value="admin">Administrador (vê tudo)</option></select>
+        </div>
+        <div id="nu-units-section" style="margin-bottom:14px;">
+          <span class="lbl">Unidades com acesso</span>
+          <div class="unit-check-list" id="nu-units-list"><div style="color:#aaa;font-size:12px;">Carregando...</div></div>
+        </div>
+        <button class="primary-btn" onclick="createUser()" style="width:100%;" id="btn-create-user">Cadastrar usuário</button>
+        <div id="user-msg" style="font-size:12px;margin-top:8px;text-align:center;min-height:16px;"></div>
+      </div>`;
+    loadUsers();
+  };
+
+  window.saveEditUser = async function(id) {
+    const nome=document.getElementById('eu-nome').value.trim();
+    const email=document.getElementById('eu-email').value.trim();
+    const senha=document.getElementById('eu-senha').value;
+    const role=document.getElementById('eu-role').value;
+    const msg=document.getElementById('edit-user-msg'); msg.textContent='';
+    if(!nome||!email){msg.style.color='#c0392b';msg.textContent='Preencha nome e e-mail.';return;}
+    if(senha && senha.length<6){msg.style.color='#c0392b';msg.textContent='Senha deve ter mínimo 6 caracteres.';return;}
+    const unidades=role==='admin'?[]:[...document.querySelectorAll('#eu-units-list input:checked')].map(c=>c.value);
+    const btn=document.getElementById('btn-edit-user'); btn.disabled=true; btn.textContent='Salvando...';
+    try {
+      // Atualizar Firestore
+      await updateDoc(doc(db,'usuarios',id),{nome,email,role,unidades});
+      // Atualizar senha se informada (via API REST do Firebase)
+      if(senha) {
+        try {
+          const idToken = await currentUser.getIdToken();
+          const u = allUsers.find(x=>x.id===id);
+          await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:update?key=${FB_CONFIG.apiKey}`,{
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({idToken, localId:id, password:senha, returnSecureToken:false})
+          });
+        } catch(e){ console.warn('Senha não alterada via admin:', e); }
+      }
+      const u=allUsers.find(x=>x.id===id);
+      if(u) Object.assign(u,{nome,email,role,unidades});
+      renderUserList();
+      msg.style.color='#1e8449'; msg.textContent='✅ Usuário atualizado!';
+      setTimeout(()=>cancelEditUser(), 1500);
+    }catch(e){msg.style.color='#c0392b';msg.textContent='Erro: '+e.message;}
+    btn.disabled=false; btn.textContent='💾 Salvar alterações';
+  };
 
   window.toggleUnitSection=function(){document.getElementById('nu-units-section').style.display=document.getElementById('nu-role').value==='admin'?'none':'block';};
 
