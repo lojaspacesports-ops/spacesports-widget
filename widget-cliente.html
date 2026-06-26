@@ -111,7 +111,7 @@ let estado = {
   produtoSelecionado: null,
   itens: [],           // lista de { numero, tamanho }
   numAtivo: null,      // número aguardando seleção de tamanho
-  form: { nome: '', cpf: '', telefone: '', unidade: '' }
+  form: { nome: '', cpf: '', unidade: '' }
 };
 
 function maskCPF(v) {
@@ -161,7 +161,7 @@ async function salvarPedido() {
     tamanho: estado.itens[0].tamanho,
     nome: estado.form.nome,
     cpf: estado.form.cpf,
-    telefone: estado.form.telefone,
+    telefone: '',
     unidade: estado.form.unidade,
     status: 'Pendente',
     criadoEm: serverTimestamp()
@@ -293,7 +293,8 @@ function renderEtapa2() {
     </div>
     <div class="form-group">
       <label>Telefone/WhatsApp *</label>
-      <input type="text" value="${f.telefone}" placeholder="(00) 00000-0000" maxlength="15" oninput="atualizarMask('telefone',this,'phone')">
+      <input type="text" value="${f.telefone}" placeholder="(00) 00000-0000" maxlength="15" oninput="atualizarMask('telefone',this,'phone')" style="display:none;">
+      <p style="font-size:11px;color:#888;margin-top:4px;margin-bottom:8px;">📱 Seu telefone será preenchido automaticamente após a finalização do pedido.</p>
     </div>
   </div>
   <div class="form-row full"><div class="form-group">
@@ -326,7 +327,7 @@ function renderEtapa3() {
     <div class="resumo-linha"><span>Unidade</span><span>${f.unidade}</span></div>
     <div class="resumo-linha"><span>Nome</span><span>${f.nome}</span></div>
     <div class="resumo-linha"><span>CPF</span><span>${f.cpf}</span></div>
-    <div class="resumo-linha"><span>Telefone</span><span>${f.telefone}</span></div>
+    <div class="resumo-linha"><span>Telefone</span><span>Será preenchido via Bling</span></div>
   </div>
   <button class="btn-proximo" onclick="confirmarPedido()" id="btn-confirmar">✅ Confirmar pedido</button>`;
 }
@@ -403,7 +404,7 @@ window.atualizarMask = (campo, el, tipo) => {
 };
 window.validarEtapa2 = () => {
   const f = estado.form;
-  if (!f.nome || !f.cpf || !f.telefone || !f.unidade) { alert('Preencha todos os campos obrigatórios (*)'); return; }
+  if (!f.nome || !f.cpf || !f.unidade) { alert('Preencha todos os campos obrigatórios (*)'); return; }
   estado.etapa = 3; renderizar();
 };
 window.confirmarPedido = async () => {
