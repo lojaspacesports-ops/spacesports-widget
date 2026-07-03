@@ -580,6 +580,14 @@
         <div class="stat-card"><div class="stat-num" style="font-size:20px;color:#1e8449;">${total-sold}</div><div class="stat-lbl">Disponíveis</div></div>
         <div class="stat-card"><div class="stat-num" style="font-size:20px;color:#c0392b;">${sold}</div><div class="stat-lbl">Vendidos</div></div>
       </div>
+      <div class="card" style="background:#f8f8f8;border:1px dashed #ddd;margin-bottom:14px;">
+        <span class="lbl" style="margin-bottom:8px;display:block;">📋 Código para o Script da Loja Integrada</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <code id="script-code-${p.id}" style="flex:1;background:#fff;border:1px solid #eee;border-radius:6px;padding:8px 10px;font-size:12px;font-family:monospace;color:#c0392b;user-select:all;">'${p.nome}': '${p.id}',</code>
+          <button onclick="copiarCodigo('${p.id}')" style="background:#c0392b;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">📋 Copiar</button>
+        </div>
+        <p style="font-size:11px;color:#888;margin-top:6px;">Cole essa linha dentro do objeto <code>produtosPorNome</code> no script da Loja Integrada.</p>
+      </div>
       <div class="card">
         <span class="lbl" style="font-size:13px;font-weight:700;color:#333;margin-bottom:10px;display:block;">✏️ Editar produto</span>
         <div style="margin-bottom:10px;"><span class="lbl">Nome</span><input class="inp" id="ep-nome" value="${p.nome}"></div>
@@ -788,7 +796,21 @@
     btn.disabled=false; btn.textContent='💾 Salvar alterações';
   };
 
-  window.toggleUnitSection=function(){document.getElementById('nu-units-section').style.display=document.getElementById('nu-role').value==='admin'?'none':'block';};
+  window.copiarCodigo = function(id) {
+    const el = document.getElementById('script-code-' + id);
+    if (!el) return;
+    navigator.clipboard.writeText(el.textContent).then(() => {
+      alert('✅ Código copiado! Cole no script da Loja Integrada.');
+    }).catch(() => {
+      // Fallback para navegadores mais antigos
+      const range = document.createRange();
+      range.selectNode(el);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      document.execCommand('copy');
+      alert('✅ Código copiado!');
+    });
+  };
 
   window.createUser = async function() {
     const nome=document.getElementById('nu-nome').value.trim(), email=document.getElementById('nu-email').value.trim(), senha=document.getElementById('nu-senha').value, role=document.getElementById('nu-role').value;
